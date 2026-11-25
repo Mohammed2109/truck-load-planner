@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "ms-azuretools.vscode-azurestaticwebapps",
+    "ritwickdey.LiveServer",
+    "github.vscode-pull-request-github"
+  ]
+}

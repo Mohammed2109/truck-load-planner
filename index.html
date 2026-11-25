@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Truck Load Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14171b; --panel:#1c2026; --panel2:#232830; --line:#2f363f; --text:#e9edf2; --muted:#8e98a5;
+    --accent:#f2b705; --accent-ink:#1a1500; --bad:#ff6b5a; --good:#3ecf8e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:Barlow,system-ui,sans-serif;font-size:15px}
+  header{height:56px;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid var(--line);
+    background:repeating-linear-gradient(-45deg,transparent 0 14px,rgba(242,183,5,.05) 14px 28px),var(--panel)}
+  .logo{font-family:"Barlow Condensed";font-weight:700;font-size:24px;letter-spacing:.06em;text-transform:uppercase}
+  .logo b{color:var(--accent)}
+  header small{color:var(--muted);font-size:13px}
+  .app{display:grid;grid-template-columns:360px 1fr;height:calc(100% - 56px)}
+  aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:16px 16px 28px}
+  h2{font-family:"Barlow Condensed";font-weight:600;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);
+    margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+  h2:first-child{margin-top:2px}
+  h2 .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:12px;letter-spacing:0}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:500}
+  select,input[type=number]{width:100%;background:#15181d;border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 9px;font:inherit;outline:none}
+  select:focus,input:focus{border-color:var(--accent)}
+  .row{display:grid;gap:8px;margin-top:10px}
+  .r3{grid-template-columns:repeat(3,1fr)}
+  .r2{grid-template-columns:1fr 1fr}
+  .rowc{display:flex;align-items:flex-end;gap:10px;margin-top:10px}
+  input[type=color]{width:42px;height:37px;border:1px solid var(--line);border-radius:7px;background:#15181d;padding:3px;cursor:pointer}
+  .chk{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text);margin:0;cursor:pointer}
+  .chk input{accent-color:var(--accent)}
+  button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:#2a3039;color:var(--text);padding:9px 12px;font-weight:600}
+  button:hover{border-color:#4a535f}
+  button:disabled{opacity:.35;cursor:default}
+  .btn-main{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .btn-main:hover{filter:brightness(1.08);border-color:var(--accent)}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
+  .readout{font-family:"Barlow Condensed";font-size:17px;font-weight:600;color:var(--text);margin-top:10px;letter-spacing:.02em}
+  .readout span{color:var(--muted);font-family:Barlow;font-size:12px;font-weight:500;letter-spacing:0;margin-right:6px}
+  .list{display:flex;flex-direction:column;gap:6px}
+  .item{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:9px;padding:9px 8px 9px 10px}
+  .item.cur{border-color:var(--accent);border-left-color:var(--c);box-shadow:0 0 0 1px var(--accent) inset}
+  .step{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#111;font-weight:700;font-size:13px}
+  .item .t{font-weight:600;font-size:14px}
+  .item .d{font-size:12px;color:var(--muted);line-height:1.45}
+  .item .d .bad{color:var(--bad)}
+  .item .d b{color:var(--text);font-weight:500}
+  .ctl{display:flex;flex-direction:column;gap:1px}
+  .ctl div{display:flex}
+  .x{background:none;border:none;color:var(--muted);padding:2px 6px;font-size:14px;line-height:1.2}
+  .x:hover:not(:disabled){color:var(--text)}
+  .x.del:hover{color:var(--bad)}
+  .empty{color:var(--muted);font-size:13px;padding:10px;border:1px dashed var(--line);border-radius:9px;text-align:center}
+  .stage{position:relative;overflow:hidden}
+  #c{display:block;width:100%;height:100%}
+  .stats{position:absolute;left:16px;top:16px;display:flex;gap:10px;flex-wrap:wrap;pointer-events:none}
+  .stat{background:rgba(20,23,27,.82);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-width:96px}
+  .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .stat .v{font-family:"Barlow Condensed";font-size:26px;font-weight:700;line-height:1.1}
+  .stat .v.bad{color:var(--bad)}
+  .panel{position:absolute;left:16px;right:16px;background:rgba(20,23,27,.86);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .meter{bottom:16px;pointer-events:none}
+  .meter .top{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .meter .top b{color:var(--text)}
+  .bar{height:10px;background:#2a3039;border-radius:6px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--good);transition:width .5s}
+  .player{bottom:86px;display:flex;align-items:center;gap:12px}
+  .player .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+  #playBtn{width:38px;height:34px;padding:0;display:grid;place-items:center;flex:none}
+  #seq{flex:1;accent-color:var(--accent);min-width:60px}
+  #seqLbl{font-size:13px;min-width:190px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #seqLbl .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+  .views{position:absolute;right:16px;top:16px;display:flex;background:rgba(20,23,27,.82);border:1px solid var(--line);border-radius:10px;padding:4px;gap:2px}
+  .views button{background:none;border:none;padding:6px 12px;color:var(--muted);font-weight:600;font-size:13px}
+  .views button.on{background:var(--accent);color:var(--accent-ink)}
+  .toast{position:absolute;left:50%;top:84px;transform:translate(-50%,-10px);opacity:0;transition:.25s;background:#2a3039;border:1px solid var(--line);
+    border-radius:10px;padding:10px 16px;font-weight:500;pointer-events:none;max-width:90%;text-align:center}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.bad{border-color:var(--bad)}
+  .tip{position:absolute;pointer-events:none;background:#0e1013;border:1px solid var(--line);border-radius:7px;padding:6px 9px;font-size:12px;display:none;white-space:nowrap}
+  .help{position:absolute;right:18px;top:62px;font-size:12px;color:var(--muted);pointer-events:none}
+  .err{position:absolute;inset:0;display:none;place-items:center;color:var(--muted);text-align:center;padding:30px}
+  @media (max-width:820px){
+    .app{grid-template-columns:1fr;grid-template-rows:62vh auto;height:auto}
+    .stage{order:-1;height:62vh}
+    aside{border-right:none;border-top:1px solid var(--line)}
+    .stat{min-width:0;padding:6px 10px}.stat .v{font-size:20px}
+    .views{top:auto;bottom:140px;right:16px}
+    .help{display:none}
+    #seqLbl{min-width:0;max-width:40%}
+    .player .k{display:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Load<b>Out</b></div>
+  <small>Truck load planner</small>
+</header>
+
+<div class="app">
+  <aside>
+    <h2><span class="n">1</span>Truck</h2>
+    <div class="card">
+      <label for="truckPreset">Truck type</label>
+      <select id="truckPreset"></select>
+      <div class="row r3">
+        <div><label for="tL">Length</label><input id="tL" type="number" min="0" step="any"></div>
+        <div><label for="tW">Width</label><input id="tW" type="number" min="0" step="any"></div>
+        <div><label for="tH">Height</label><input id="tH" type="number" min="0" step="any"></div>
+      </div>
+      <div class="row r2">
+        <div><label for="tUnit">Truck units</label>
+          <select id="tUnit"><option value="ft">Feet</option><option value="in">Inches</option><option value="m">Meters</option><option value="cm">Centimeters</option></select>
+        </div>
+        <div style="display:flex;align-items:flex-end"><div class="hint" style="margin:0 0 8px">Inside cargo dimensions</div></div>
+      </div>
+      <div class="readout" id="truckReadout"></div>
+    </div>
+
+    <h2><span class="n">2</span>Add bins</h2>
+    <div class="card">
+      <label for="binPreset">Bin size</label>
+      <select id="binPreset"></select>
+      <div class="row r3">
+        <div><label for="bL">Length</label><input id="bL" type="number" min="0" step="any"></div>
+        <div><label for="bW">Width</label><input id="bW" type="number" min="0" step="any"></div>
+        <div><label for="bH">Height</label><input id="bH" type="number" min="0" step="any"></div>
+      </div>
+      <div class="rowc">
+        <div style="flex:1"><label for="bUnit">Bin units</label>
+          <select id="bUnit"><option value="in">Inches</option><option value="ft">Feet</option><option value="cm">Centimeters</option><option value="m">Meters</option></select>
+        </div>
+        <div style="flex:1"><label for="bQ">Number of bins</label><input id="bQ" type="number" min="1" step="1" value="10"></div>
+        <div><label for="bC">Color</label><input id="bC" type="color"></div>
+      </div>
+      <div class="rowc">
+        <label class="chk"><input id="bRot" type="checkbox" checked> Allow turning bins sideways</label>
+      </div>
+      <div class="btns">
+        <button class="btn-main" id="addBtn">+ Add bins</button>
+        <button id="fillBtn" title="Add as many of this bin as will fit">Fill the rest</button>
+      </div>
+    </div>
+
+    <h2><span class="n">3</span>Loading order</h2>
+    <div class="list" id="list"></div>
+    <div class="btns">
+      <button id="optBtn" title="Put the biggest bins first in the order and reload">Biggest first</button>
+      <button id="clearBtn">Clear truck</button>
+    </div>
+    <div class="hint">Bin groups load top to bottom in this list. Use ▲ ▼ to change the order. Inside the truck, bins go in from the cab toward the doors, floor to ceiling. Use the player under the truck to replay the load one bin at a time.</div>
+  </aside>
+
+  <section class="stage" id="stage">
+    <canvas id="c"></canvas>
+    <div class="stats">
+      <div class="stat"><div class="k">Bins loaded</div><div class="v" id="sLoaded">0</div></div>
+      <div class="stat"><div class="k">Didn't fit</div><div class="v" id="sUnfit">0</div></div>
+      <div class="stat"><div class="k">Space used</div><div class="v" id="sPct">0%</div></div>
+    </div>
+    <div class="views" id="views">
+      <button data-v="3d" class="on">3D</button><button data-v="side">Side</button><button data-v="top">Top</button><button data-v="rear">Rear</button>
+    </div>
+    <div class="help">Drag to rotate · scroll to zoom · right-drag to pan</div>
+    <div class="panel player">
+      <button id="playBtn" title="Replay the loading order">▶</button>
+      <span class="k">Load order</span>
+      <input id="seq" type="range" min="0" max="0" value="0" aria-label="Loading step">
+      <span id="seqLbl">Empty truck</span>
+    </div>
+    <div class="panel meter">
+      <div class="top"><span>Cargo volume</span><span><b id="sVol">0</b> of <span id="sTot">0</span></span></div>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="tip" id="tip"></div>
+    <div class="err" id="err">The 3D view couldn't load in this browser.</div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+// Everything is stored internally in INCHES.
+const UNIT_F = {in:1, ft:1/12, m:0.0254, cm:2.54};
+const toU = (v,u) => v*UNIT_F[u];
+const fromU = (v,u) => v/UNIT_F[u];
+// presets in inches: [name, L, W, H]
+const TRUCKS = [
+  ['53 ft trailer (8′6″ wide, 13′6″ tall)', 636, 102, 162],
+  ['48 ft trailer', 576, 102, 108],
+  ['26 ft box truck', 312, 96, 96],
+  ['20 ft box truck', 240, 90, 90],
+  ['15 ft box truck', 180, 90, 84],
+  ['10 ft box truck', 120, 78, 72],
+  ['20 ft shipping container', 231.6, 92.4, 93.6],
+  ['40 ft shipping container', 472.8, 92.4, 93.6],
+  ['Custom', null]
+];
+const BINS = [
+  ['Small tote', 24, 18, 15],
+  ['Medium box', 24, 24, 24],
+  ['Large box', 36, 24, 30],
+  ['Wheelie bin (96 gal)', 29, 34, 43],
+  ['Pallet 48×40', 48, 40, 48],
+  ['IBC tote', 48, 40, 54],
+  ['Custom', null]
+];
+const PALETTE = ['#3d8bfd','#f2b705','#e4572e','#2bb673','#a259ff','#ff7eb6','#17bebb','#f08a24','#9c7a5b','#5c7cfa'];
+const MAX_UNITS = 2500;
+const EPS = 1e-6;
+
+let tUnit = 'ft', bUnit = 'in';
+let truck = {L:636, W:102, H:162};
+let groups = [];
+let gidSeq = 1, colorIdx = 0;
+let packer = null;
+let placed = [];   // [{b, g}] in loading order
+let meshes = [];   // aligned with placed
+
+const r2 = n => Math.round(n*100)/100;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ord = n => n + (['th','st','nd','rd'][(n%100-20)%10] || ['th','st','nd','rd'][n%100] || 'th');
+
+function ftIn(inches){
+  let ft = Math.floor(inches/12 + 1e-9), rem = Math.round((inches - ft*12)*10)/10;
+  if(rem >= 12){ ft++; rem = 0; }
+  return rem ? `${ft}′ ${rem}″` : `${ft}′`;
+}
+function fmtLen(inches, u){ return u==='ft' ? ftIn(inches) : `${r2(toU(inches,u))} ${u}`; }
+function fmtDims(l,w,h,u){ return `${r2(toU(l,u))} × ${r2(toU(w,u))} × ${r2(toU(h,u))} ${u}`; }
+function fmtVol(v){ const x = v*Math.pow(UNIT_F[tUnit],3); return (x>=1000?Math.round(x).toLocaleString():r2(x))+' '+tUnit+'³'; }
+
+/* ---------- Packing (extreme-point first fit) ---------- */
+class Packer {
+  constructor(L,H,W){ this.L=L; this.H=H; this.W=W; this.boxes=[]; this.points=[{x:0,y:0,z:0}]; this.failed=new Set(); }
+  overlaps(x,y,z,dx,dy,dz){
+    const bs=this.boxes;
+    for(let i=bs.length-1;i>=0;i--){ const b=bs[i];
+      if(x<b.x+b.dx-EPS && x+dx>b.x+EPS && z<b.z+b.dz-EPS && z+dz>b.z+EPS && y<b.y+b.dy-EPS && y+dy>b.y+EPS) return true; }
+    return false;
+  }
+  support(x,y,z,dx,dz){
+    if(y<1e-4) return 1;
+    let a=0;
+    for(const b of this.boxes){
+      if(Math.abs(b.y+b.dy-y)<1e-4){
+        const ox=Math.min(x+dx,b.x+b.dx)-Math.max(x,b.x), oz=Math.min(z+dz,b.z+b.dz)-Math.max(z,b.z);
+        if(ox>0&&oz>0) a+=ox*oz;
+      }
+    }
+    return a/(dx*dz);
+  }
+  dropY(x,z){
+    let y=0;
+    for(const b of this.boxes){ if(x>=b.x-EPS && x<b.x+b.dx-EPS && z>=b.z-EPS && z<b.z+b.dz-EPS) y=Math.max(y,b.y+b.dy); }
+    return y;
+  }
+  place(l,w,h,rot){
+    const key=[l,w,h,rot].join('|');
+    if(this.failed.has(key)) return null;
+    const ors=[[l,h,w]];
+    if(rot && Math.abs(l-w)>EPS) ors.push([w,h,l]);
+    this.points.sort((a,b)=>a.x-b.x||a.y-b.y||a.z-b.z);
+    for(const p of this.points){
+      for(const [dx,dy,dz] of ors){
+        if(p.x+dx>this.L+1e-4||p.y+dy>this.H+1e-4||p.z+dz>this.W+1e-4) continue;
+        if(this.overlaps(p.x,p.y,p.z,dx,dy,dz)) continue;
+        if(this.support(p.x,p.y,p.z,dx,dz)<0.7) continue;
+        const b={x:p.x,y:p.y,z:p.z,dx,dy,dz};
+        this.boxes.push(b); this.addPoints(b);
+        return b;
+      }
+    }
+    this.failed.add(key);
+    return null;
+  }
+  addPoints(b){
+    const c=[{x:b.x+b.dx,y:b.y,z:b.z},{x:b.x,y:b.y+b.dy,z:b.z},{x:b.x,y:b.y,z:b.z+b.dz}];
+    if(b.y>0){ c.push({x:b.x+b.dx,y:this.dropY(b.x+b.dx,b.z),z:b.z}); c.push({x:b.x,y:this.dropY(b.x,b.z+b.dz),z:b.z+b.dz}); }
+    this.points=this.points.filter(p=>!(p.x>=b.x-EPS&&p.x<b.x+b.dx-EPS&&p.y>=b.y-EPS&&p.y<b.y+b.dy-EPS&&p.z>=b.z-EPS&&p.z<b.z+b.dz-EPS));
+    for(const p of c){
+      if(p.x>=this.L-EPS||p.y>=this.H-EPS||p.z>=this.W-EPS) continue;
+      if(!this.points.some(q=>Math.abs(q.x-p.x)<1e-5&&Math.abs(q.y-p.y)<1e-5&&Math.abs(q.z-p.z)<1e-5)) this.points.push(p);
+    }
+  }
+  used(){ return this.boxes.reduce((s,b)=>s+b.dx*b.dy*b.dz,0); }
+}
+
+/* ---------- 3D scene ---------- */
+const canvas=$('#c'), stage=$('#stage');
+let renderer, scene, camera, controls, world, truckGroup, binGroup, hl, deckY=0;
+let has3D=true;
+try{
+  renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  scene=new THREE.Scene(); scene.background=new THREE.Color('#171a1f');
+  camera=new THREE.PerspectiveCamera(36,1,0.1,2000);
+  controls=new THREE.OrbitControls(camera,canvas);
+  controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.495; controls.minDistance=3; controls.maxDistance=200;
+  scene.add(new THREE.HemisphereLight(0xe4ecff,0x30302c,0.8));
+  const sun=new THREE.DirectionalLight(0xffffff,0.85);
+  sun.position.set(14,28,18); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+  Object.assign(sun.shadow.camera,{left:-22,right:22,top:22,bottom:-22,near:1,far:90}); sun.shadow.bias=-0.0005;
+  scene.add(sun);
+  const fill=new THREE.DirectionalLight(0xffeedd,0.25); fill.position.set(-15,10,-12); scene.add(fill);
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshStandardMaterial({color:'#20242a',roughness:1}));
+  ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+  const grid=new THREE.GridHelper(200,100,0x2f363f,0x262b32); grid.position.y=0.002; scene.add(grid);
+  world=new THREE.Group(); truckGroup=new THREE.Group(); binGroup=new THREE.Group();
+  world.add(truckGroup); world.add(binGroup); scene.add(world);
+  // highlight for the current bin while replaying
+  const hg=new THREE.BoxGeometry(1,1,1);
+  hl=new THREE.Mesh(hg,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.35,depthWrite:false}));
+  hl.add(new THREE.LineSegments(new THREE.EdgesGeometry(hg),new THREE.LineBasicMaterial({color:0xffffff})));
+  hl.visible=false; world.add(hl);
+}catch(e){ has3D=false; $('#err').style.display='grid'; }
+
+const matCache={};
+function binMats(color){
+  if(!matCache[color]){
+    const c=new THREE.Color(color);
+    matCache[color]={ m:new THREE.MeshStandardMaterial({color:c,roughness:.55,metalness:.05}), e:new THREE.LineBasicMaterial({color:c.clone().multiplyScalar(0.45)}) };
+  }
+  return matCache[color];
+}
+const geoCache={};
+function boxGeo(dx,dy,dz){
+  const k=[dx,dy,dz].map(v=>v.toFixed(3)).join('x');
+  if(!geoCache[k]){ const g=new THREE.BoxGeometry(dx*0.97,dy*0.97,dz*0.97); geoCache[k]={g,e:new THREE.EdgesGeometry(g)}; }
+  return geoCache[k];
+}
+function smat(c,o){ return new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.6,metalness:.15},o||{})); }
+function addBox(parent,w,h,d,m,x,y,z,shadow=true){
+  const me=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); me.position.set(x,y,z);
+  me.castShadow=shadow; me.receiveShadow=true; parent.add(me); return me;
+}
+function clearGroup(g){
+  while(g.children.length){ const c=g.children.pop(); c.traverse(o=>{ if(o.geometry && !o.userData.sharedGeo) o.geometry.dispose(); }); }
+}
+
+let extent={minX:0,maxX:1,top:1};
+function buildTruck(){
+  if(!has3D) return;
+  clearGroup(truckGroup);
+  const {L,W,H}=truck, u=W;
+  const R=0.2*u, deck=2.35*R; deckY=deck;
+  const metal=smat('#9aa4b0',{metalness:.5,roughness:.4}), dark=smat('#2b2f35'), tire=smat('#111214',{roughness:.9});
+  const yellow=smat('#f2b705',{roughness:.45}), glass=smat('#1d2b3a',{roughness:.1,metalness:.6});
+  addBox(truckGroup,L,0.04*u,W,smat('#8a6a48',{roughness:.85}),L/2,deck-0.02*u,0);
+  const gap=0.08*u, cabL=Math.max(0.9*u,Math.min(1.2*u,L*0.12));
+  addBox(truckGroup,L+cabL+gap+0.1*u,0.12*u,W*0.62,dark,(L-cabL-gap)/2,deck-0.1*u,0);
+  const shellG=new THREE.BoxGeometry(L,H,W);
+  const shell=new THREE.Mesh(shellG,new THREE.MeshStandardMaterial({color:'#d6e0ea',transparent:true,opacity:.06,depthWrite:false,side:THREE.DoubleSide}));
+  shell.position.set(L/2,deck+H/2,0); truckGroup.add(shell);
+  const edges=new THREE.LineSegments(new THREE.EdgesGeometry(shellG),new THREE.LineBasicMaterial({color:'#dfe7ef',transparent:true,opacity:.55}));
+  edges.position.copy(shell.position); truckGroup.add(edges);
+  const fw=addBox(truckGroup,0.03*u,H,W,smat('#c9d2dc',{transparent:true,opacity:.55}),-0.015*u,deck+H/2,0,false);
+  fw.material.depthWrite=false;
+  const t=0.05*u;
+  for(const x of [0,L]) for(const z of [-W/2,W/2]) addBox(truckGroup,t,H,t,metal,x,deck+H/2,z);
+  for(const z of [-W/2,W/2]) addBox(truckGroup,L,t,t,metal,L/2,deck+H,z);
+  addBox(truckGroup,t,t,W,metal,L,deck+H,0);
+  addBox(truckGroup,t,t*1.4,W,metal,L,deck,0);
+  const cabTop=deck+Math.min(H*0.85,1.05*u), cabBot=R*0.9, cx0=-gap-cabL;
+  const cabH=cabTop-cabBot;
+  addBox(truckGroup,cabL,cabH,W*0.96,yellow,cx0+cabL/2,cabBot+cabH/2,0);
+  addBox(truckGroup,0.02*u,cabH*0.38,W*0.84,glass,cx0-0.01*u,cabBot+cabH*0.72,0,false);
+  for(const s of [-1,1]) addBox(truckGroup,cabL*0.42,cabH*0.32,0.02*u,glass,cx0+cabL*0.3,cabBot+cabH*0.72,s*W*0.485,false);
+  addBox(truckGroup,0.1*u,0.14*u,W*1.0,dark,cx0-0.03*u,cabBot+0.07*u,0);
+  addBox(truckGroup,0.02*u,cabH*0.22,W*0.5,dark,cx0-0.012*u,cabBot+cabH*0.32,0,false);
+  const lamp=new THREE.MeshStandardMaterial({color:'#fff6d5',emissive:'#fff1b0',emissiveIntensity:.8});
+  for(const s of [-1,1]) addBox(truckGroup,0.03*u,0.07*u,0.14*u,lamp,cx0-0.015*u,cabBot+cabH*0.3,s*W*0.36,false);
+  const red=new THREE.MeshStandardMaterial({color:'#ff3b30',emissive:'#a01810',emissiveIntensity:.8});
+  for(const s of [-1,1]) addBox(truckGroup,0.03*u,0.12*u,0.08*u,red,L+0.03*u,deck-0.08*u,s*W*0.42,false);
+  const wg=new THREE.CylinderGeometry(R,R,0.16*u,28); wg.rotateX(Math.PI/2);
+  const hg=new THREE.CylinderGeometry(R*0.5,R*0.5,0.17*u,16); hg.rotateX(Math.PI/2);
+  const axles=[cx0+cabL*0.5, L*0.8];
+  if(L>2.8*u) axles.push(L*0.8-2.2*R);
+  for(const x of axles) for(const s of [-1,1]){
+    const z=s*(W/2-0.08*u);
+    const w=new THREE.Mesh(wg,tire); w.position.set(x,R,z); w.castShadow=true; truckGroup.add(w);
+    const h=new THREE.Mesh(hg,metal); h.position.set(x,R,z); truckGroup.add(h);
+  }
+  extent={minX:cx0-0.1*u,maxX:L+0.05*u,top:deck+H};
+  const span=Math.max(extent.maxX-extent.minX,(deck+H)*1.6,W*1.6);
+  const s=22/span;
+  world.scale.setScalar(s);
+  world.position.set(-(extent.minX+extent.maxX)/2*s,0,0);
+}
+
+const anims=[];
+function addBinMesh(b,g,seq,delay){
+  if(!has3D) return;
+  const {m,e}=binMats(g.color), G=boxGeo(b.dx,b.dy,b.dz);
+  const mesh=new THREE.Mesh(G.g,m); mesh.userData.sharedGeo=true; mesh.castShadow=true; mesh.receiveShadow=true;
+  const line=new THREE.LineSegments(G.e,e); line.userData.sharedGeo=true; mesh.add(line);
+  const ty=deckY+b.y+b.dy/2;
+  mesh.position.set(b.x+b.dx/2,ty,-truck.W/2+b.z+b.dz/2);
+  Object.assign(mesh.userData,{gid:g.id,box:b,seq,ty});
+  binGroup.add(mesh); meshes.push(mesh);
+  if(delay!=null){ mesh.visible=false; anims.push({mesh,ty,start:performance.now()+delay,drop:Math.max(truck.H*0.6,b.dy*2)}); }
+}
+
+/* ---------- camera ---------- */
+const VIEWS={ '3d':[0.85,0.62,1.0], side:[0,0.1,1], top:[0.0001,1,0.02], rear:[1,0.18,0] };
+let curView='3d', camTween=null;
+function fitView(v,instant){
+  if(!has3D) return;
+  curView=v;
+  const s=world.scale.x, lx=(extent.maxX-extent.minX)*s, ly=extent.top*s, lz=truck.W*s;
+  const target=new THREE.Vector3(0,ly*0.42,0);
+  const d=new THREE.Vector3(...VIEWS[v]).normalize();
+  const r=0.5*Math.sqrt(lx*lx+ly*ly+lz*lz);
+  let dist=r/Math.sin(THREE.MathUtils.degToRad(camera.fov/2))*0.95;
+  if(camera.aspect<1.2) dist/=Math.max(camera.aspect/1.2,0.45);
+  if(v==='rear') dist*=0.75;
+  const pos=target.clone().add(d.multiplyScalar(dist));
+  if(instant){ camera.position.copy(pos); controls.target.copy(target); controls.update(); camTween=null; return; }
+  camTween={t0:performance.now(),fromP:camera.position.clone(),fromT:controls.target.clone(),toP:pos,toT:target};
+}
+function resize(){
+  if(!has3D) return;
+  const w=stage.clientWidth,h=stage.clientHeight;
+  renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',resize);
+
+const ease=t=>1-Math.pow(1-t,3);
+let play=null;
+function loop(now){
+  requestAnimationFrame(loop);
+  if(play){
+    const v=Math.min(meshes.length, Math.floor((now-play.t0)/play.per)+play.from);
+    if(v!==+$('#seq').value) setSeq(v);
+    if(v>=meshes.length) stopPlay();
+  }
+  if(!has3D) return;
+  for(let i=anims.length-1;i>=0;i--){
+    const a=anims[i]; const t=(now-a.start)/320;
+    if(t<0) continue;
+    a.mesh.visible=true;
+    if(t>=1){ a.mesh.position.y=a.ty; anims.splice(i,1); continue; }
+    a.mesh.position.y=a.ty+a.drop*(1-ease(t));
+  }
+  if(camTween){
+    const t=Math.min(1,(now-camTween.t0)/650), k=ease(t);
+    camera.position.lerpVectors(camTween.fromP,camTween.toP,k);
+    controls.target.lerpVectors(camTween.fromT,camTween.toT,k);
+    if(t>=1) camTween=null;
+  }
+  controls.update();
+  renderer.render(scene,camera);
+}
+
+/* ---------- loading logic ---------- */
+function resetPacker(){
+  stopPlay();
+  packer=new Packer(truck.L,truck.H,truck.W);
+  if(has3D){ clearGroup(binGroup); anims.length=0; hl.visible=false; }
+  placed=[]; meshes=[];
+  groups.forEach(g=>{ g.loaded=0; g.first=0; g.last=0; g.minX=Infinity; g.maxX=0; });
+}
+function stagger(n){ return Math.max(5,Math.min(90,2600/Math.max(n,1))); }
+
+function placeOne(g){
+  const b=packer.place(g.l,g.w,g.h,g.rot);
+  if(!b) return null;
+  g.loaded++;
+  placed.push({b,g});
+  const seq=placed.length;
+  if(!g.first) g.first=seq;
+  g.last=seq;
+  g.minX=Math.min(g.minX,b.x); g.maxX=Math.max(g.maxX,b.x+b.dx);
+  return {b,seq};
+}
+
+function fullRepack(animate){
+  resetPacker();
+  const out=[];
+  for(const g of groups) for(let i=0;i<g.qty;i++){ const r=placeOne(g); if(!r) break; out.push([r,g]); }
+  const st=stagger(out.length);
+  out.forEach(([r,g],i)=>addBinMesh(r.b,g,r.seq,animate?i*st:null));
+  render();
+}
+
+function loadUnits(g,max,fillMode){
+  stopPlay(); showAll();
+  const out=[];
+  for(let i=0;i<max;i++){ const r=placeOne(g); if(!r) break; out.push(r); }
+  if(fillMode) g.qty=g.loaded;
+  const st=stagger(out.length);
+  out.forEach((r,i)=>addBinMesh(r.b,g,r.seq,i*st));
+  return out.length;
+}
+function totalUnits(){ return groups.reduce((s,g)=>s+g.qty,0); }
+
+function readBin(){
+  const l=fromU(+$('#bL').value,bUnit), w=fromU(+$('#bW').value,bUnit), h=fromU(+$('#bH').value,bUnit);
+  if(!(l>0&&w>0&&h>0)){ toast('Enter a length, width and height for the bin.',true); return null; }
+  const rot=$('#bRot').checked;
+  const fits = h<=truck.H+1e-6 && ((l<=truck.L+1e-6&&w<=truck.W+1e-6)||(rot&&w<=truck.L+1e-6&&l<=truck.W+1e-6));
+  if(!fits){ toast('That bin is bigger than the truck’s cargo space.',true); return null; }
+  const p=BINS[$('#binPreset').selectedIndex];
+  const name=p[1]==null?'Custom bin':p[0];
+  return {id:gidSeq++,name,l,w,h,rot,color:$('#bC').value,qty:0,loaded:0};
+}
+function nextColor(){ colorIdx=(colorIdx+1)%PALETTE.length; $('#bC').value=PALETTE[colorIdx]; }
+
+function addBins(){
+  const g=readBin(); if(!g) return;
+  let q=Math.floor(+$('#bQ').value);
+  if(!(q>=1)){ toast('Enter how many bins to add.',true); return; }
+  const room=MAX_UNITS-totalUnits();
+  if(room<=0){ toast('That’s the most bins this planner handles at once.',true); return; }
+  q=Math.min(q,room);
+  g.qty=q; groups.push(g);
+  const n=loadUnits(g,q,false);
+  if(n===0) toast(`No room left for ${q} × ${g.name}.`,true);
+  else if(n<q) toast(`Loaded ${n} of ${q}. ${q-n} didn’t fit.`,true);
+  else toast(`Loaded ${n} × ${g.name}.`);
+  nextColor(); render();
+}
+function fillRest(){
+  const g=readBin(); if(!g) return;
+  const room=MAX_UNITS-totalUnits();
+  groups.push(g);
+  const n=loadUnits(g,Math.max(room,0),true);
+  if(n===0){ groups.pop(); toast(`No room left for a ${g.name}.`,true); }
+  else toast(`${n} more × ${g.name} fit in the truck.`);
+  nextColor(); render();
+}
+
+/* ---------- replay / load order player ---------- */
+function setSeq(v){
+  $('#seq').value=v;
+  if(has3D){
+    if(anims.length){ anims.forEach(a=>a.mesh.position.y=a.ty); anims.length=0; }
+    meshes.forEach((m,i)=>{ m.visible=i<v; });
+    const cur=meshes[v-1];
+    if(cur && v<meshes.length){
+      const b=cur.userData.box;
+      hl.visible=true; hl.position.copy(cur.position); hl.scale.set(b.dx*1.02,b.dy*1.02,b.dz*1.02);
+    } else hl.visible=false;
+  }
+  seqLabel(v);
+  markCurrentGroup(v);
+}
+function seqLabel(v){
+  const N=placed.length, el=$('#seqLbl');
+  if(!N){ el.textContent='Empty truck'; return; }
+  if(v>=N){ el.textContent=`All ${N} bins loaded`; return; }
+  if(v===0){ el.textContent='Empty truck'; return; }
+  const {g}=placed[v-1];
+  el.innerHTML=`<span class="sw" style="background:${esc(g.color)}"></span>Bin ${v} of ${N} · ${esc(g.name)}`;
+}
+function markCurrentGroup(v){
+  const N=placed.length, gid=(v>0&&v<N)?placed[v-1].g.id:null;
+  document.querySelectorAll('#list .item').forEach(el=>el.classList.toggle('cur',+el.dataset.gid===gid));
+}
+function showAll(){ $('#seq').max=placed.length; setSeq(placed.length); }
+function startPlay(){
+  const N=placed.length; if(!N) return;
+  let from=+$('#seq').value; if(from>=N) from=0;
+  const per=Math.max(25,Math.min(160,9000/N));
+  setSeq(from);
+  play={t0:performance.now(),per,from};
+  $('#playBtn').textContent='❚❚';
+}
+function stopPlay(){ play=null; $('#playBtn').textContent='▶'; }
+
+/* ---------- UI ---------- */
+let toastT;
+function toast(msg,bad){
+  const t=$('#toast'); t.textContent=msg; t.className='toast show'+(bad?' bad':'');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.className='toast'+(bad?' bad':''),2600);
+}
+function render(){
+  const list=$('#list');
+  if(!groups.length){ list.innerHTML='<div class="empty">The truck is empty. Add some bins above.</div>'; }
+  else list.innerHTML=groups.map((g,i)=>{
+    const miss=g.qty-g.loaded;
+    const range=g.loaded?(g.first===g.last?`bin #${g.first}`:`bins #${g.first}–${g.last}`):'none loaded';
+    const where=g.loaded?` · <b>${fmtLen(g.minX,tUnit)} – ${fmtLen(g.maxX,tUnit)}</b> from cab`:'';
+    return `<div class="item" data-gid="${g.id}" style="--c:${esc(g.color)}">
+      <span class="step" title="Loaded ${ord(i+1)}">${i+1}</span>
+      <div><div class="t">${esc(g.name)} <span style="color:var(--muted);font-weight:500">× ${g.qty}</span></div>
+      <div class="d">${fmtDims(g.l,g.w,g.h,bUnit)}<br>${range}${where}${miss>0?`<br><span class="bad">${miss} didn’t fit</span>`:''}</div></div>
+      <div class="ctl"><div>
+        <button class="x" data-up="${g.id}" title="Load earlier" ${i===0?'disabled':''}>▲</button>
+        <button class="x del" data-del="${g.id}" title="Remove">✕</button></div>
+        <button class="x" data-down="${g.id}" title="Load later" ${i===groups.length-1?'disabled':''}>▼</button>
+      </div></div>`;
+  }).join('');
+  const loaded=placed.length, unfit=groups.reduce((s,g)=>s+g.qty-g.loaded,0);
+  const tot=truck.L*truck.W*truck.H, used=packer?packer.used():0, pct=tot?used/tot*100:0;
+  $('#sLoaded').textContent=loaded;
+  const su=$('#sUnfit'); su.textContent=unfit; su.className='v'+(unfit?' bad':'');
+  $('#sPct').textContent=(pct<10?pct.toFixed(1):Math.round(pct))+'%';
+  $('#sVol').textContent=fmtVol(used); $('#sTot').textContent=fmtVol(tot);
+  $('#barFill').style.width=Math.min(100,pct)+'%';
+  $('#seq').max=loaded;
+  if(!play){ $('#seq').value=loaded; seqLabel(loaded); }
+}
+
+function fillPresets(){
+  $('#truckPreset').innerHTML=TRUCKS.map((t,i)=>`<option value="${i}">${esc(t[0])}</option>`).join('');
+  $('#binPreset').innerHTML=BINS.map((b,i)=>`<option value="${i}">${esc(b[0])}</option>`).join('');
+  $('#truckPreset').selectedIndex=0; $('#binPreset').selectedIndex=1;
+}
+function setTruckInputs(){
+  $('#tL').value=r2(toU(truck.L,tUnit)); $('#tW').value=r2(toU(truck.W,tUnit)); $('#tH').value=r2(toU(truck.H,tUnit));
+  $('#truckReadout').innerHTML=`<span>L × W × H</span>${ftIn(truck.L)} × ${ftIn(truck.W)} × ${ftIn(truck.H)}`;
+}
+function applyBinPreset(){
+  const p=BINS[$('#binPreset').selectedIndex]; if(p[1]==null) return;
+  $('#bL').value=r2(toU(p[1],bUnit)); $('#bW').value=r2(toU(p[2],bUnit)); $('#bH').value=r2(toU(p[3],bUnit));
+}
+function truckChanged(){
+  const L=fromU(+$('#tL').value,tUnit),W=fromU(+$('#tW').value,tUnit),H=fromU(+$('#tH').value,tUnit);
+  if(!(L>0&&W>0&&H>0)) return;
+  truck={L,W,H}; setTruckInputs(); buildTruck(); fullRepack(false); fitView(curView,true);
+}
+
+$('#truckPreset').addEventListener('change',e=>{
+  const p=TRUCKS[e.target.selectedIndex]; if(p[1]==null) return;
+  truck={L:p[1],W:p[2],H:p[3]}; setTruckInputs(); buildTruck(); fullRepack(false); fitView(curView,true);
+});
+['#tL','#tW','#tH'].forEach(id=>$(id).addEventListener('change',()=>{ $('#truckPreset').selectedIndex=TRUCKS.length-1; truckChanged(); }));
+$('#binPreset').addEventListener('change',applyBinPreset);
+['#bL','#bW','#bH'].forEach(id=>$(id).addEventListener('input',()=>{ $('#binPreset').selectedIndex=BINS.length-1; }));
+$('#tUnit').addEventListener('change',e=>{ tUnit=e.target.value; setTruckInputs(); render(); });
+$('#bUnit').addEventListener('change',e=>{
+  const old=bUnit; bUnit=e.target.value;
+  ['#bL','#bW','#bH'].forEach(id=>{ const v=+$(id).value; if(v>0) $(id).value=r2(toU(fromU(v,old),bUnit)); });
+  render();
+});
+$('#addBtn').addEventListener('click',addBins);
+$('#fillBtn').addEventListener('click',fillRest);
+$('#bQ').addEventListener('keydown',e=>{ if(e.key==='Enter') addBins(); });
+$('#optBtn').addEventListener('click',()=>{
+  if(!groups.length){ toast('Add some bins first.'); return; }
+  const before=placed.length;
+  groups.sort((a,b)=>(b.l*b.w*b.h)-(a.l*a.w*a.h));
+  fullRepack(true);
+  const gain=placed.length-before;
+  toast(gain>0?`Biggest bins first: ${gain} more bin${gain>1?'s':''} fit now.`:'Reordered: biggest bins load first.');
+});
+$('#clearBtn').addEventListener('click',()=>{ groups=[]; fullRepack(false); });
+$('#list').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b||b.disabled) return;
+  const id=+(b.dataset.del||b.dataset.up||b.dataset.down), i=groups.findIndex(g=>g.id===id);
+  if(i<0) return;
+  if(b.dataset.del){ groups.splice(i,1); fullRepack(false); return; }
+  const j=b.dataset.up?i-1:i+1;
+  [groups[i],groups[j]]=[groups[j],groups[i]];
+  fullRepack(true);
+});
+$('#views').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#views button').forEach(x=>x.classList.toggle('on',x===b));
+  fitView(b.dataset.v);
+});
+$('#seq').addEventListener('input',e=>{ stopPlay(); setSeq(+e.target.value); });
+$('#playBtn').addEventListener('click',()=>{ play?stopPlay():startPlay(); });
+
+if(has3D){
+  const ray=new THREE.Raycaster(), mp=new THREE.Vector2(), tip=$('#tip');
+  canvas.addEventListener('pointermove',e=>{
+    const r=canvas.getBoundingClientRect();
+    mp.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+    ray.setFromCamera(mp,camera);
+    const hit=ray.intersectObjects(meshes.filter(m=>m.visible),false)[0];
+    if(hit){
+      const ud=hit.object.userData, g=groups.find(x=>x.id===ud.gid), b=ud.box;
+      if(g){ tip.style.display='block'; tip.style.left=(e.clientX-r.left+14)+'px'; tip.style.top=(e.clientY-r.top+14)+'px';
+        tip.textContent=`#${ud.seq} · ${g.name} · ${fmtDims(b.dx,b.dz,b.dy,bUnit)} · ${fmtLen(b.x,tUnit)} from cab`; return; }
+    }
+    tip.style.display='none';
+  });
+  canvas.addEventListener('pointerleave',()=>tip.style.display='none');
+}
+
+/* ---------- start ---------- */
+fillPresets(); setTruckInputs(); applyBinPreset(); $('#bC').value=PALETTE[0];
+buildTruck(); resize(); fitView('3d',true); fullRepack(false);
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
